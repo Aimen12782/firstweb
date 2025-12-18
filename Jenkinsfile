@@ -14,22 +14,23 @@ pipeline {
         }
 
         stage('Build Docker Image') {
-            steps {
-                sh "docker build -t $IMAGE_NAME ."
-            }
-        }
+    steps {
+        bat "docker build -t %IMAGE_NAME% ."
+    }
+}
 
-        stage('Stop Old Container') {
-            steps {
-                sh "docker rm -f $CONTAINER_NAME || true"
-            }
-        }
+stage('Stop Old Container') {
+    steps {
+        bat "docker rm -f %CONTAINER_NAME% || echo Container not found"
+    }
+}
 
-        stage('Run Docker Container') {
-            steps {
-                sh "docker run -d --name $CONTAINER_NAME -p 3000:3000 $IMAGE_NAME"
-            }
-        }
+stage('Run Docker Container') {
+    steps {
+        bat "docker run -d --name %CONTAINER_NAME% -p 3000:3000 %IMAGE_NAME%"
+    }
+}
+
     }
 
     post {
