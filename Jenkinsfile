@@ -18,19 +18,21 @@ pipeline {
             }
         }
 
-        stage('SonarQube Analysis') {
-            steps {
-                echo "Running SonarQube code analysis..."
-                withSonarQubeEnv('SonarQube') {
-                    sh '''#!/bin/bash
-sonar-scanner \
-    -Dsonar.projectKey=myapp \
-    -Dsonar.sources=. \
-    -Dsonar.host.url=http://16.170.15.66:9000 \
-    -Dsonar.login=${SONAR_TOKEN}
-'''
-                }
-            }
+stage('SonarQube Analysis') {
+    steps {
+        echo "Running SonarQube code analysis..."
+        // Ensure 'SonarQube' matches the name in Manage Jenkins > System
+        withSonarQubeEnv('SonarQube') {
+            sh """
+            sonar-scanner \
+                -Dsonar.projectKey=myapp \
+                -Dsonar.sources=. \
+                -Dsonar.host.url=http://16.170.15.66:9000 \
+                -Dsonar.login=${SONAR_TOKEN}
+            """
+        }
+    }
+}
         }
 
         stage('Build Docker Image') {
