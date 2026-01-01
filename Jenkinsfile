@@ -4,7 +4,8 @@ pipeline {
     environment {
         IMAGE_NAME = "myapp"
         IMAGE_TAG = "${BUILD_NUMBER}"
-        SONAR_TOKEN = credentials('sonarqubetoken')
+        // This will now work because your Credential ID matches!
+        SONAR_TOKEN = credentials('sonarqubetoken') 
     }
 
     stages {
@@ -20,6 +21,7 @@ pipeline {
         stage('SonarQube Analysis') {
             steps {
                 echo "Running SonarQube code analysis..."
+                // Make sure the name 'SonarQube' is configured in Manage Jenkins > System
                 withSonarQubeEnv('SonarQube') {
                     sh """
                     sonar-scanner \
@@ -30,7 +32,7 @@ pipeline {
                     """
                 }
             }
-        } // This was where the extra brace was causing trouble
+        }
 
         stage('Build Docker Image') {
             steps {
@@ -57,7 +59,7 @@ pipeline {
 
     post {
         success {
-            echo "Pipeline completed successfully! Your app should be live on http://16.171.56.29"
+            echo "Pipeline completed successfully! App: http://16.171.56.29"
         }
         failure {
             echo "Pipeline failed. Check the logs for details."
