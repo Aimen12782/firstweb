@@ -4,7 +4,7 @@ pipeline {
     environment {
         IMAGE_NAME = "myapp"
         IMAGE_TAG = "${BUILD_NUMBER}"
-        SONAR_TOKEN = credentials('sonarqubetoken') // Jenkins credential ID
+        SONAR_TOKEN = credentials('sonarqubetoken')  // Use the exact ID
     }
 
     stages {
@@ -13,7 +13,7 @@ pipeline {
             steps {
                 git branch: 'main',
                     url: 'https://github.com/Aimen12782/firstweb.git',
-                    credentialsId: 'githubtoken' // GitHub PAT stored in Jenkins
+                    credentialsId: 'githubtoken'  // GitHub token ID
             }
         }
 
@@ -39,7 +39,7 @@ pipeline {
 
         stage('Deploy to EC2') {
             steps {
-                sshagent(['ec2-key']) {
+                sshagent(['ec2key']) {  // SSH key ID
                     sh '''
                     ssh -o StrictHostKeyChecking=no ubuntu@16.171.56.29 "
                         docker stop myapp || true
