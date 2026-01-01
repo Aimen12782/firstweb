@@ -3,33 +3,36 @@ pipeline {
 
     environment {
         IMAGE_NAME = "myapp"
-        IMAGE_TAG  = "${BUILD_NUMBER}"
+        IMAGE_TAG = "${BUILD_NUMBER}"
     }
 
     stages {
-
         stage('Checkout') {
             steps {
                 echo "Cloning GitHub repository..."
                 git branch: 'master',
                     url: 'https://github.com/Aimen12782/firstweb.git',
-                    credentialsId: 'githubtoken'
+                    credentialsId: 'githubtoken' // Make sure this exists in Jenkins
             }
         }
 
-       stage('SonarQube Analysis') {
-    steps {
-        echo 'Running SonarQube code analysis...'
-        withSonarQubeEnv('SonarQube') {
-            sh """
-            ${tool 'sonar-scanner'}/bin/sonar-scanner \
-            -Dsonar.projectKey=myapp \
-            -Dsonar.sources=. \
-            -Dsonar.host.url=http://16.170.15.66:9000
-            """
+        stage('SonarQube Analysis') {
+            steps {
+                echo "Running SonarQube code analysis..."
+                script {
+                    def scannerHome = tool name: 'sonar-scanner', type: 'hudson.plugins.sonar.SonarRunnerInstallation'
+                    withSonarQubeEnv('SonarQube') {
+                        sh """
+                        ${scannerHome}/bin/sonar-scanner \
+                            -Dsonar.projectKey=myapp \
+                            -Dsonar.sources=. \
+                            -Dsonar.host.url=http://16.170.15.66:9000 \
+                            -Dsonar.login=${SONAR_TOKEN}
+                        """
+                    }
+                }
+            }
         }
-    }
-}
 
         stage('Build Docker Image') {
             steps {
@@ -42,13 +45,13 @@ pipeline {
             steps {
                 echo "Deploying Docker container to EC2..."
                 sshagent(['ec2key']) {
-                    sh '''
-                        ssh -o StrictHostKeyChecking=no ubuntu@16.171.56.29 "
-                            sudo docker stop myapp || true
-                            sudo docker rm myapp || true
-                            sudo docker run -d -p 80:80 --name myapp myapp:${BUILD_NUMBER}
-                        "
-                    '''
+                    sh """
+                    ssh -o StrictHostKeyChecking=no ubuntu@16.171.56.29 "
+                        sudo docker stop myapp || true
+                        sudo docker rm myapp || true
+                        sudo docker run -d -p 80:80 --name myapp ${IMAGE_NAME}:${IMAGE_TAG}
+                    "
+                    """
                 }
             }
         }
@@ -56,10 +59,10 @@ pipeline {
 
     post {
         success {
-            echo "✅ Pipeline completed successfully!"
+            echo "Pipeline completed successfully!"
         }
         failure {
-            echo "❌ Pipeline failed. Check logs."
+            echo "❌ Pipeline failed. Check the logs."
         }
     }
 }
