@@ -1,21 +1,15 @@
 pipeline {
     agent any
 
-    tools {
-        // Use the SonarQube scanner installation configured in Jenkins
-        sonarScanner 'sonar-scanner'
-    }
-
     environment {
+        SONAR_TOKEN = credentials('sonarqubetoken')
         IMAGE_NAME = "myapp"
         IMAGE_TAG = "${BUILD_NUMBER}"
-        SONAR_TOKEN = credentials('sonarqubetoken') // Your SonarQube token
     }
 
     stages {
         stage('Checkout') {
             steps {
-                echo "Cloning GitHub repository..."
                 git branch: 'master',
                     url: 'https://github.com/Aimen12782/firstweb.git',
                     credentialsId: 'githubtoken'
@@ -24,7 +18,6 @@ pipeline {
 
         stage('SonarQube Analysis') {
             steps {
-                echo "Running SonarQube code analysis..."
                 script {
                     def scannerHome = tool name: 'sonar-scanner', type: 'hudson.plugins.sonar.SonarRunnerInstallation'
                     withSonarQubeEnv('SonarQube') {
@@ -42,22 +35,18 @@ pipeline {
 
         stage('Build Docker Image') {
             steps {
-                echo "Building Docker image..."
-                sh """
-                docker build -t ${IMAGE_NAME}:${IMAGE_TAG} .
-                """
+                sh "docker build -t ${IMAGE_NAME}:${IMAGE_TAG} ."
             }
         }
 
         stage('Deploy to EC2') {
             steps {
-                echo "Deploying Docker container to EC2..."
                 sshagent(['ec2key']) {
                     sh """
                     ssh -o StrictHostKeyChecking=no ubuntu@16.171.56.29 "
-                        sudo docker stop myapp || true
-                        sudo docker rm myapp || true
-                        sudo docker run -d -p 80:80 --name myapp ${IMAGE_NAME}:${IMAGE_TAG}
+                        sudo docker stop ${IMAGE_NAME} || true
+                        sudo docker rm ${IMAGE_NAME} || true
+                        sudo docker run -d -p 80:80 --name ${IMAGE_NAME} ${IMAGE_NAME}:${IMAGE_TAG}
                     "
                     """
                 }
@@ -67,10 +56,10 @@ pipeline {
 
     post {
         success {
-            echo "✅ Pipeline completed successfully!"
+            echo "Pipeline completed successfully!"
         }
         failure {
-            echo "❌ Pipeline failed. Check logs."
+            echo "Pipeline failed. Check logs!"
         }
     }
 }
