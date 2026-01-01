@@ -4,7 +4,7 @@ pipeline {
     environment {
         IMAGE_NAME = "myapp"
         IMAGE_TAG = "${BUILD_NUMBER}"
-        SONAR_TOKEN = credentials('sonarqubetoken')
+        SONAR_TOKEN = credentials('sonarqubetoken') // Jenkins credential ID
     }
 
     stages {
@@ -13,7 +13,7 @@ pipeline {
             steps {
                 git branch: 'main',
                     url: 'https://github.com/Aimen12782/firstweb.git',
-                    credentialsId: 'githubtoken'
+                    credentialsId: 'githubtoken' // GitHub PAT stored in Jenkins
             }
         }
 
@@ -25,7 +25,7 @@ pipeline {
                         -Dsonar.projectKey=myapp \
                         -Dsonar.sources=. \
                         -Dsonar.host.url=http://16.170.15.66:9000 \
-                        -Dsonar.login=${sonarqubetoken}
+                        -Dsonar.login=${SONAR_TOKEN}
                     '''
                 }
             }
