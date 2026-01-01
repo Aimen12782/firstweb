@@ -17,19 +17,19 @@ pipeline {
             }
         }
 
-        stage('SonarQube Analysis') {
-            steps {
-                echo "Running SonarQube code analysis..."
-                withSonarQubeEnv('SonarQube') {
-                    sh '''
-                        sonar-scanner \
-                          -Dsonar.projectKey=myapp \
-                          -Dsonar.sources=. \
-                          -Dsonar.host.url=http://16.170.15.66:9000
-                    '''
-                }
-            }
+       stage('SonarQube Analysis') {
+    steps {
+        echo 'Running SonarQube code analysis...'
+        withSonarQubeEnv('SonarQube') {
+            sh """
+            ${tool 'sonar-scanner'}/bin/sonar-scanner \
+            -Dsonar.projectKey=myapp \
+            -Dsonar.sources=. \
+            -Dsonar.host.url=http://16.170.15.66:9000
+            """
         }
+    }
+}
 
         stage('Build Docker Image') {
             steps {
