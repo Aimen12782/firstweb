@@ -4,7 +4,7 @@ pipeline {
     environment {
         IMAGE_NAME = "myapp"
         IMAGE_TAG = "${BUILD_NUMBER}"
-        SONAR_TOKEN = credentials('sonarqubetoken')  // SonarQube token ID
+        SONAR_TOKEN = credentials('sonarqubetoken')  // SonarQube token
     }
 
     stages {
@@ -14,15 +14,17 @@ pipeline {
                 echo "Cloning GitHub repository..."
                 git branch: 'main',
                     url: 'https://github.com/Aimen12782/firstweb.git',
-                    credentialsId: 'githubtoken'  // GitHub token ID
+                    credentialsId: 'githubtoken'  // GitHub token
             }
         }
 
         stage('SonarQube Analysis') {
             steps {
                 echo "Running SonarQube code analysis..."
-                withSonarQubeEnv('SonarQube') {  // Must match SonarQube server name in Jenkins
-                    sh '''
-                    sonar-scanner \
-                        -Dsonar.projectKey=myapp \
-                        -Dsonar.sources=
+                withSonarQubeEnv('SonarQube') {
+                    sh '''#!/bin/bash
+sonar-scanner \
+    -Dsonar.projectKey=myapp \
+    -Dsonar.sources=. \
+    -Dsonar.host.url=http://16.170.15.66:9000 \
+    -Dsonar.login=${SO
