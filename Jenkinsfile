@@ -2,8 +2,8 @@ pipeline {
     agent any
 
     tools {
-        // Updated keyword to match your Jenkins configuration
-        "sonar-scanner" 'sonar-scanner' 
+        // Mapping the specific class name to your tool name
+        "hudson.plugins.sonar.SonarRunnerInstallation" 'sonar-scanner'
     }
 
     environment {
@@ -40,7 +40,6 @@ pipeline {
         stage('Build Docker Image') {
             steps {
                 echo "Building Docker image..."
-                // Build the image locally on the Jenkins agent
                 sh "docker build -t ${IMAGE_NAME}:${IMAGE_TAG} ."
             }
         }
@@ -53,8 +52,6 @@ pipeline {
                     ssh -o StrictHostKeyChecking=no ubuntu@16.171.56.29 "
                         sudo docker stop myapp || true
                         sudo docker rm myapp || true
-                        # Note: If image is not on a registry, you may need 'docker save/load' 
-                        # but usually for local build/deploy, we run it here:
                         sudo docker run -d -p 80:80 --name myapp ${IMAGE_NAME}:${IMAGE_TAG}
                     "
                     """
@@ -65,7 +62,7 @@ pipeline {
 
     post {
         success {
-            echo "Pipeline completed successfully! App: http://16.171.56.29"
+            echo "Pipeline completed successfully! App live at http://16.171.56.29"
         }
         failure {
             echo "Pipeline failed. Check the logs for details."
