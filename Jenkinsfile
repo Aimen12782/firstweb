@@ -2,7 +2,6 @@ pipeline {
     agent any
 
     tools {
-        // Mapping the specific class name to your tool name
         "hudson.plugins.sonar.SonarRunnerInstallation" 'sonar-scanner'
     }
 
@@ -25,14 +24,17 @@ pipeline {
         stage('SonarQube Analysis') {
             steps {
                 echo "Running SonarQube code analysis..."
-                withSonarQubeEnv('SonarQube') {
-                    sh """
-                    sonar-scanner \
-                        -Dsonar.projectKey=myapp \
-                        -Dsonar.sources=. \
-                        -Dsonar.host.url=http://16.170.15.66:9000 \
-                        -Dsonar.login=${SONAR_TOKEN}
-                    """
+                script {
+                    def scannerHome = tool name: 'sonar-scanner', type: 'hudson.plugins.sonar.SonarRunnerInstallation'
+                    withSonarQubeEnv('SonarQube') {
+                        sh """
+                        ${scannerHome}/bin/sonar-scanner \
+                            -Dsonar.projectKey=myapp \
+                            -Dsonar.sources=. \
+                            -Dsonar.host.url=http://16.170.15.66:9000 \
+                            -Dsonar.login=${SONAR_TOKEN}
+                        """
+                    }
                 }
             }
         }
@@ -62,7 +64,7 @@ pipeline {
 
     post {
         success {
-            echo "Pipeline completed successfully! App live at http://16.171.56.29"
+            echo "Pipeline completed successfully!"
         }
         failure {
             echo "Pipeline failed. Check the logs for details."
