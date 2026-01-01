@@ -1,9 +1,9 @@
 pipeline {
     agent any
 
-    // This tells Jenkins to pull the 'sonar-scanner' tool you just configured
     tools {
-        sonarScanner 'sonar-scanner' 
+        // Updated keyword to match your Jenkins configuration
+        "sonar-scanner" 'sonar-scanner' 
     }
 
     environment {
@@ -13,13 +13,19 @@ pipeline {
     }
 
     stages {
-        // ... (Checkout stage)
+        stage('Checkout') {
+            steps {
+                echo "Cloning GitHub repository..."
+                git branch: 'master',
+                    url: 'https://github.com/Aimen12782/firstweb.git',
+                    credentialsId: 'githubtoken'
+            }
+        }
 
         stage('SonarQube Analysis') {
             steps {
                 echo "Running SonarQube code analysis..."
                 withSonarQubeEnv('SonarQube') {
-                    // Because of the 'tools' block, Jenkins now knows what 'sonar-scanner' is
                     sh """
                     sonar-scanner \
                         -Dsonar.projectKey=myapp \
@@ -30,6 +36,39 @@ pipeline {
                 }
             }
         }
-        // ... (Remaining stages)
+
+        stage('Build Docker Image') {
+            steps {
+                echo "Building Docker image..."
+                // Build the image locally on the Jenkins agent
+                sh "docker build -t ${IMAGE_NAME}:${IMAGE_TAG} ."
+            }
+        }
+
+        stage('Deploy to EC2') {
+            steps {
+                echo "Deploying Docker container to EC2..."
+                sshagent(['ec2key']) {
+                    sh """
+                    ssh -o StrictHostKeyChecking=no ubuntu@16.171.56.29 "
+                        sudo docker stop myapp || true
+                        sudo docker rm myapp || true
+                        # Note: If image is not on a registry, you may need 'docker save/load' 
+                        # but usually for local build/deploy, we run it here:
+                        sudo docker run -d -p 80:80 --name myapp ${IMAGE_NAME}:${IMAGE_TAG}
+                    "
+                    """
+                }
+            }
+        }
+    }
+
+    post {
+        success {
+            echo "Pipeline completed successfully! App: http://16.171.56.29"
+        }
+        failure {
+            echo "Pipeline failed. Check the logs for details."
+        }
     }
 }
