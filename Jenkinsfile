@@ -1,9 +1,15 @@
 pipeline {
     agent any
 
+    tools {
+        // Use the SonarQube scanner installation configured in Jenkins
+        sonarScanner 'sonar-scanner'
+    }
+
     environment {
         IMAGE_NAME = "myapp"
         IMAGE_TAG = "${BUILD_NUMBER}"
+        SONAR_TOKEN = credentials('sonarqubetoken') // Your SonarQube token
     }
 
     stages {
@@ -12,7 +18,7 @@ pipeline {
                 echo "Cloning GitHub repository..."
                 git branch: 'master',
                     url: 'https://github.com/Aimen12782/firstweb.git',
-                    credentialsId: 'githubtoken' // Make sure this exists in Jenkins
+                    credentialsId: 'githubtoken'
             }
         }
 
@@ -37,7 +43,9 @@ pipeline {
         stage('Build Docker Image') {
             steps {
                 echo "Building Docker image..."
-                sh "docker build -t ${IMAGE_NAME}:${IMAGE_TAG} ."
+                sh """
+                docker build -t ${IMAGE_NAME}:${IMAGE_TAG} .
+                """
             }
         }
 
@@ -59,10 +67,10 @@ pipeline {
 
     post {
         success {
-            echo "Pipeline completed successfully!"
+            echo "✅ Pipeline completed successfully!"
         }
         failure {
-            echo "❌ Pipeline failed. Check the logs."
+            echo "❌ Pipeline failed. Check logs."
         }
     }
 }
