@@ -12,7 +12,7 @@ pipeline {
         stage('Checkout') {
             steps {
                 echo "Cloning GitHub repository..."
-                git branch: 'main',
+                git branch: 'master',
                     url: 'https://github.com/Aimen12782/firstweb.git',
                     credentialsId: 'githubtoken'  // GitHub token
             }
