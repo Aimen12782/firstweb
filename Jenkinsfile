@@ -2,43 +2,51 @@ pipeline {
     agent any
 
     environment {
-        IMAGE_NAME = "firstweb:latest"
-        CONTAINER_NAME = "firstweb_container"
+        IMAGE_NAME = "myapp"
+        IMAGE_TAG = "${BUILD_NUMBER}"
+        APP_SERVER = "ubuntu@<APP_EC2_IP>"
     }
 
     stages {
-        stage('Checkout Code') {
+
+        stage('Checkout') {
             steps {
-                git branch: 'master', url: 'https://github.com/Aimen12782/firstweb.git'
+                git branch: 'main',
+                    url: 'https://github.com/yourusername/yourrepo.git'
+            }
+        }
+
+        stage('SonarQube Analysis') {
+            steps {
+                withSonarQubeEnv('SonarQube') {
+                    sh '''
+                    sonar-scanner \
+                    -Dsonar.projectKey=myapp \
+                    -Dsonar.sources=. \
+                    -Dsonar.host.url=http://<SONAR_EC2_IP>:9000
+                    '''
+                }
             }
         }
 
         stage('Build Docker Image') {
-    steps {
-        bat "docker build -t %IMAGE_NAME% ."
-    }
-}
-
-stage('Stop Old Container') {
-    steps {
-        bat "docker rm -f %CONTAINER_NAME% || echo Container not found"
-    }
-}
-
-stage('Run Docker Container') {
-    steps {
-        bat "docker run -d --name %CONTAINER_NAME% -p 3000:3000 %IMAGE_NAME%"
-    }
-}
-
-    }
-
-    post {
-        success {
-            echo "Website deployed successfully!"
+            steps {
+                sh "docker build -t ${IMAGE_NAME}:${IMAGE_TAG} ."
+            }
         }
-        failure {
-            echo "Deployment failed!"
+
+        stage('Deploy to EC2') {
+            steps {
+                sshagent(['ec2-key']) {
+                    sh '''
+                    ssh -o StrictHostKeyChecking=no ubuntu@<APP_EC2_IP> "
+                    docker stop myapp || true
+                    docker rm myapp || true
+                    docker run -d -p 80:80 --name myapp ${IMAGE_NAME}:${IMAGE_TAG}
+                    "
+                    '''
+                }
+            }
         }
     }
 }
