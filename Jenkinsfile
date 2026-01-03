@@ -4,7 +4,7 @@ pipeline {
     environment {
         DOCKER_IMAGE = "myapp:latest"
         APP_SERVER_IP = "16.170.209.221"
-        SSH_KEY = "deploykey2.pem"
+        SSH_KEY = "/var/lib/jenkins/keys/deploykey2.pem"
     }
 
     stages {
@@ -30,19 +30,17 @@ pipeline {
 
         stage('Build Docker Image') {
             steps {
-                sh """
-                docker build -t $DOCKER_IMAGE .
-                """
+                sh "docker build -t $DOCKER_IMAGE ."
             }
         }
 
         stage('Push & Deploy to App EC2') {
             steps {
                 sh """
-                # Save and compress Docker image, send to App EC2, load it there
-                docker save $DOCKER_IMAGE | bzip2 | ssh -o StrictHostKeyChecking=no -i $SSH_KEY ubuntu@$APP_SERVER_IP 'bunzip2 | sudo docker load'
+                # Send Docker image to EC2 and load it
+                docker save $DOCKER_IMAGE | ssh -o StrictHostKeyChecking=no -i $SSH_KEY ubuntu@$APP_SERVER_IP 'sudo docker load'
 
-                # Stop, remove, and run container on App EC2
+                # Stop, remove, and run the container on EC2
                 ssh -o StrictHostKeyChecking=no -i $SSH_KEY ubuntu@$APP_SERVER_IP '
                     sudo docker stop myapp || true
                     sudo docker rm myapp || true
