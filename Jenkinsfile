@@ -10,7 +10,7 @@ pipeline {
         stage('Checkout') {
             steps {
                 git branch: 'master',
-                    url: 'https://github.com/firstweb.git',
+                    url: 'https://github.com/Aimen12782/firstweb.git',
                     credentialsId: 'githubtoken'
             }
         }
