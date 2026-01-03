@@ -3,7 +3,7 @@ pipeline {
 
     environment {
         DOCKER_IMAGE = "myapp:latest"
-        APP_SERVER_IP = "16.170.209.221"
+        APP_SERVER_IP = "16.170.209.221"            // Replace with your App EC2 public IP
         SSH_KEY = "/var/lib/jenkins/keys/deploykey2.pem"
     }
 
@@ -20,9 +20,9 @@ pipeline {
             steps {
                 withSonarQubeEnv('SonarQube') {
                     sh """
-                    ${tool 'SonarScanner'}/bin/sonar-scanner \
-                    -Dsonar.projectKey=my-first-project \
-                    -Dsonar.sources=.
+                        ${tool 'SonarScanner'}/bin/sonar-scanner \
+                        -Dsonar.projectKey=my-first-project \
+                        -Dsonar.sources=.
                     """
                 }
             }
@@ -34,18 +34,19 @@ pipeline {
             }
         }
 
-        stage('Push & Deploy to App EC2') {
+        stage('Deploy to App EC2') {
             steps {
+                // Push & run container on remote server
                 sh """
-                # Send Docker image to EC2 and load it
-                docker save $DOCKER_IMAGE | ssh -o StrictHostKeyChecking=no -i $SSH_KEY ubuntu@$APP_SERVER_IP 'sudo docker load'
+                    # Save Docker image, send via SSH, and load
+                    docker save $DOCKER_IMAGE | ssh -o StrictHostKeyChecking=no -i $SSH_KEY ubuntu@$APP_SERVER_IP 'sudo docker load'
 
-                # Stop, remove, and run the container on EC2
-                ssh -o StrictHostKeyChecking=no -i $SSH_KEY ubuntu@$APP_SERVER_IP '
-                    sudo docker stop myapp || true
-                    sudo docker rm myapp || true
-                    sudo docker run -d -p 80:80 --name myapp $DOCKER_IMAGE
-                '
+                    # Stop old container, remove it, and run new container
+                    ssh -o StrictHostKeyChecking=no -i $SSH_KEY ubuntu@$APP_SERVER_IP '
+                        sudo docker stop myapp || true
+                        sudo docker rm myapp || true
+                        sudo docker run -d -p 80:80 --name myapp $DOCKER_IMAGE
+                    '
                 """
             }
         }
