@@ -9,9 +9,13 @@ pipeline {
     stages {
         stage('Checkout') {
             steps {
-                withCredentials([string(credentialsId: 'githubtoken', variable: 'GITHUB_TOKEN')]) {
+                withCredentials([usernamePassword(
+                    credentialsId: 'githubtoken', 
+                    usernameVariable: 'GITHUB_USER', 
+                    passwordVariable: 'GITHUB_PASS'
+                )]) {
                     sh '''
-                    git clone https://Aimen12782:${GITHUB_TOKEN}@github.com/Aimen12782/firstweb.git
+                    git clone https://${GITHUB_USER}:${GITHUB_PASS}@github.com/Aimen12782/firstweb.git
                     cd firstweb
                     git checkout master
                     '''
