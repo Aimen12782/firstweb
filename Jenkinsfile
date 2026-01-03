@@ -1,9 +1,6 @@
 pipeline {
     agent any
-    environment {
-        IMAGE_NAME = "myapp"
-        IMAGE_TAG = "${BUILD_NUMBER}"
-    }
+
     stages {
         stage('Checkout') {
             steps {
@@ -12,6 +9,17 @@ pipeline {
                     credentialsId: 'githubtoken'
             }
         }
+
+        stage('SonarQube Analysis') {
+            steps {
+                withSonarQubeEnv('SonarQube') {
+                    sh """
+                    ${tool 'SonarScanner'}/bin/sonar-scanner \
+                    -Dsonar.projectKey=my-first-project \
+                    -Dsonar.sources=.
+                    """
+                }
+            }
+        }
     }
 }
-
