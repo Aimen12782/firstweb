@@ -3,7 +3,8 @@ pipeline {
 
     environment {
         DOCKER_IMAGE = "myapp:latest"
-        APP_SERVER_IP = "16.170.209.221"
+        APP_SERVER_IP = "16.170.209.221"   // Your App EC2 public IP
+        SSH_KEY = "devopskey.pem"          // Make sure this is in Jenkins home
     }
 
     stages {
@@ -37,12 +38,12 @@ pipeline {
 
         stage('Push & Deploy to App EC2') {
             steps {
+                // Copy Docker image to App EC2 without creating tar manually
                 sh """
-                scp -o StrictHostKeyChecking=no -i devopskey.pem <YOUR_LOCAL_TAR> ubuntu@$APP_SERVER_IP:~/app.tar
-                ssh -o StrictHostKeyChecking=no -i devopskey.pem ubuntu@$APP_SERVER_IP '
+                docker save $DOCKER_IMAGE | bzip2 | ssh -o StrictHostKeyChecking=no -i $SSH_KEY ubuntu@$APP_SERVER_IP 'bunzip2 | docker load'
+                ssh -o StrictHostKeyChecking=no -i $SSH_KEY ubuntu@$APP_SERVER_IP '
                     docker stop myapp || true
                     docker rm myapp || true
-                    docker load -i ~/app.tar
                     docker run -d -p 80:80 --name myapp myapp:latest
                 '
                 """
